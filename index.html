@@ -1,398 +1,195 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Continuous Speed Test — Tejas ⚡</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-  /* --- FULL OOKLA‑STYLE UI THEME --- */
-  :root{
-    --bg:#0b0f17;
-    --card:#111827;
-    --text:#e5e7eb;
-    --accent:#00eaff;
-    --accent2:#007bff;
-    --muted:#6b7280;
-    --radius:18px;
-  }
-  body{
-    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
-    background:var(--bg);
-    color:var(--text);
-    max-width:980px;
-    margin:0 auto;
-    padding:26px;
-  }
-  h1{
-    text-align:center;
-    font-size:2rem;
-    font-weight:700;
-    margin-bottom:10px;
-    color:var(--accent);
-  }
-  .pill{
-    padding:8px 14px;
-    border-radius:var(--radius);
-    border:1px solid #1f2937;
-    background:#161b22;
-    color:var(--muted);
-    backdrop-filter:blur(8px);
-  }
-  .row{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-    align-items:center;
-    margin:16px 0;
-  }
-  input,button{
-    padding:10px 14px;
-    border-radius:var(--radius);
-    border:1px solid #1f2937;
-    background:#161b22;
-    color:var(--text);
-  }
-  input:focus{
-    outline:2px solid var(--accent);
-  }
-  button{
-    cursor:pointer;
-    transition:0.2s;
-  }
-  button:hover{
-    background:#1f2937;
-  }
-  #chart{
-    width:100%;
-    height:220px;
-    border-radius:var(--radius);
-    background:#0f131b;
-    display:block;
-  }
-  pre{
-    background:#111827;
-    padding:14px;
-    border-radius:var(--radius);
-    max-height:260px;
-    overflow:auto;
-    color:#9ca3af;
-    font-size:0.85rem;
-  }
-  .big{
-    font-size:2.2rem;
-    text-align:center;
-    margin:20px 0;
-    color:var(--accent);
-    font-weight:700;
-  }
-  footer{
-    margin-top:20px;
-    font-size:0.8rem;
-    color:var(--muted);
-    text-align:center;
-  }
-  /* Dark mode toggle refined */
-  .dark-mode body{ background:#02040a; }
+  <title>Speed Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  /* Center speedometer & enhance glow */
-  #speedometer{
-    filter: drop-shadow(0 0 12px #00eaff55);
-  }
-</style>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --accent: #00eaff;
+      --track: #1f2937;
+      --text: #e5e7eb;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    header {
+      position: absolute;
+      top: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+
+    button {
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: none;
+      background: #111827;
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover { background: #1f2937; }
+    button:active { transform: scale(0.97); }
+    button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+    canvas {
+      margin-top: 30px;
+    }
+
+    #speedValue {
+      margin-top: 12px;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 18px;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+  </style>
 </head>
 <body>
-  <h1>Continuous Speed Test</h1>
-  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <div class="pill">Advanced • Simple</div>
-    <div class="pill">5–10 min continuous</div>
-    <div class="pill">Frontend on GitHub Pages</div>
-  </div>
 
-  <div class="row" style="margin-top:12px">
-    <label>Duration (mins): <input id="duration" type="number" min="1" max="60" value="7"></label>
-    <label style="flex:1">Download files (comma-separated URLs): <input id="fileUrls" type="text" style="width:100%" value="https://speed.cloudflare.com/__down?bytes=20000000,https://speed.cloudflare.com/__down?bytes=100000000,https://speed.cloudflare.com/__down?bytes=500000000"></label>
-  </div>
+<header>
+  <h1>Speed Test</h1>
+  <button id="startBtn">Start</button>
+  <button id="stopBtn" disabled>Stop</button>
+</header>
 
-  <div class="row">
-    <label style="flex:1">Upload Worker URL (optional): <input id="workerUrl" type="text" style="width:100%" placeholder="https://your-worker.yourdomain.workers.dev"></label>
-    <label>Upload chunk (KB): <input id="uploadKb" type="number" min="16" max="5120" value="256"></label>
-    <label>Auto-start: <input id="autoStart" type="checkbox"></label>
-  </div>
+<div id="goWrap" style="position:relative;display:flex;justify-content:center;align-items:center">
+  <canvas id="speedometer" width="340" height="190"></canvas>
+  <div id="goBtn" style="position:absolute;width:110px;height:110px;border-radius:50%;background:#00eaff;color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;cursor:pointer;box-shadow:0 0 25px #00eaff88;transition:transform .3s,opacity .3s">GO</div>
+</div>
+<div id="speedValue">— Mbps</div>
 
-  <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
-    <button id="startBtn">Start Test</button>
-    <button id="stopBtn" disabled>Stop</button>
-    <div style="margin-left:12px"><small id="status">Idle</small></div>
-  </div>
-
-  <div class="big" id="speedDisplay">— Mbps</div>
-
-  <canvas id="chart"></canvas>
-
-  <h3>Log</h3>
-  <pre id="log"></pre>
-
-  <footer>
-    <small>Download-only works straight on GitHub Pages. Upload needs a tiny server (Cloudflare Worker example available). Defaults use ThinkBroadband + Hetzner test files. Made for you, Tejas ⚡</small>
-  </footer>
+<footer>
+  Continuous real‑time speed test · GitHub Pages compatible
+</footer>
 
 <script>
-(() => {
   const startBtn = document.getElementById('startBtn');
-  const stopBtn  = document.getElementById('stopBtn');
-  const durationInput = document.getElementById('duration');
-  const fileUrlsInput = document.getElementById('fileUrls');
-  const workerUrlInput = document.getElementById('workerUrl');
-  const uploadKbInput  = document.getElementById('uploadKb');
-  const autoStartCb = document.getElementById('autoStart');
-  const speedDisplay = document.getElementById('speedDisplay');
-  const logEl = document.getElementById('log');
-  const statusEl = document.getElementById('status');
-  const chart = document.getElementById('chart');
-  function resizeCanvas(){ chart.width = chart.clientWidth; chart.height = chart.clientHeight; }
-  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-  const ctx = chart.getContext('2d');
+  const goBtn = document.getElementById('goBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const speedText = document.getElementById('speedValue');
+  const canvas = document.getElementById('speedometer');
+  const ctx = canvas.getContext('2d');
 
   let running = false;
-  let samples = []; // {t, downloadMbps, uploadMbps?}
-  const rollingWindow = 30;
+  let needleValue = 0;
 
-  function appendLog(txt){
-    logEl.textContent = (new Date()).toLocaleTimeString() + ' — ' + txt + '\n' + logEl.textContent;
-  }
+  const TEST_URL = 'https://speed.cloudflare.com/__down?bytes=500000000';
 
-  function bytesToMbps(bytes, ms){
-    if (ms <= 0) return 0;
-    const bits = bytes * 8;
-    return (bits / (ms/1000)) / (1024*1024);
-  }
+  function drawGauge(speed) {
+    const max = 200;
+    const cx = 170, cy = 170, r = 140;
+    const start = Math.PI, end = 0;
 
-  async function streamDownload(url){
-    const cb = Date.now() + Math.random().toString(36).slice(2);
-    const final = url + (url.includes('?') ? '&' : '?') + 'cb=' + cb;
-    const start = performance.now();
-    const res = await fetch(final, { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    if (res.body && res.body.getReader){
-      const reader = res.body.getReader();
-      let total = 0;
-      while(true){
-        const {done, value} = await reader.read();
-        if (done) break;
-        total += (value ? value.length : 0);
-      }
-      const ms = performance.now() - start;
-      return { bytes: total, ms };
-    } else {
-      const blob = await res.blob();
-      const ms = performance.now() - start;
-      return { bytes: blob.size, ms };
-    }
-  }
+    needleValue += (speed - needleValue) * 0.15;
 
-  async function uploadOnce(workerUrl, chunkKb){
-    const size = Math.max(1, Math.floor(chunkKb)) * 1024;
-    const arr = new Uint8Array(size);
-    crypto.getRandomValues(arr);
-    const start = performance.now();
-    const res = await fetch(workerUrl, { method: 'POST', body: arr, cache: 'no-store' });
-    const ms = performance.now() - start;
-    let received = null;
-    try { const json = await res.json(); received = json && (json.received||json.receivedBytes||json.size) ? (json.received||json.receivedBytes||json.size) : null; } catch(e){}
-    return { bytesSent: size, ms, received, status: res.status };
-  }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  function drawChart(){
-    const w = chart.width, h = chart.height;
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
-    ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
-    for (let y=0;y<5;y++){ ctx.beginPath(); ctx.moveTo(0, (y+1)*h/6); ctx.lineTo(w, (y+1)*h/6); ctx.stroke(); }
-    if (!samples.length) return;
-    const vals = samples.map(s => s.downloadMbps || 0);
-    const maxV = Math.max(...vals, 1);
+    // Track
+    ctx.lineWidth = 18;
+    ctx.strokeStyle = '#1f2937';
     ctx.beginPath();
-    for (let i=0;i<samples.length;i++){
-      const x = (i/(samples.length-1||1)) * w;
-      const y = h - (samples[i].downloadMbps / maxV) * (h*0.9) - (h*0.05);
-      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.stroke();
+
+    // Active arc
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    grad.addColorStop(0, '#00eaff');
+    grad.addColorStop(1, '#007bff');
+    ctx.strokeStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, start, start + Math.PI * Math.min(needleValue / max, 1));
+    ctx.stroke();
+
+    // Needle
+    const angle = start + Math.PI * Math.min(needleValue / max, 1);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#00eaff';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+    ctx.stroke();
+
+    requestAnimationFrame(() => drawGauge(needleValue));
+  }
+
+  async function runTest() {
+    running = true;
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+
+    const res = await fetch(TEST_URL, { cache: 'no-store' });
+    const reader = res.body.getReader();
+
+    let lastTime = performance.now();
+
+    while (running) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const now = performance.now();
+      const delta = now - lastTime;
+
+      if (delta > 200) {
+        const mbps = (value.length * 8) / (delta / 1000) / (1024 * 1024);
+        speedText.textContent = mbps.toFixed(2) + ' Mbps';
+        needleValue = mbps;
+        lastTime = now;
+      }
     }
-    ctx.strokeStyle = '#0077ff'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#0055cc';
-    for (let i=0;i<samples.length;i++){ const x = (i/(samples.length-1||1)) * w; const y = h - (samples[i].downloadMbps / maxV) * (h*0.9) - (h*0.05); ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill(); }
-    ctx.fillStyle = '#333'; ctx.font = '12px system-ui, Arial'; ctx.fillText('Max: ' + maxV.toFixed(2) + ' Mbps', 6, 14);
+
+    stop();
   }
 
-  async function runTest(){
-    const durationMin = Math.max(1, Number(durationInput.value) || 7);
-    const durationMs = durationMin * 60 * 1000;
-    let files = String(fileUrlsInput.value || '').split(',').map(s=>s.trim()).filter(Boolean);
-    if (!files.length){ appendLog('No test files provided.'); alert('Please add at least one test file URL.'); return; }
-    const workerUrl = String(workerUrlInput.value || '').trim();
-    const uploadKb = Math.max(16, Number(uploadKbInput.value) || 256);
-
-    running = true; startBtn.disabled = true; stopBtn.disabled = false; statusEl.textContent = 'Running';
-    appendLog('Started test for ' + durationMin + ' minutes. Files: ' + files.join(', ') + (workerUrl ? (' • worker: ' + workerUrl) : ''));
-
-    const endT = Date.now() + durationMs; samples = [];
-    let fileIdx = 0;
-
-    while (running && Date.now() < endT){
-      const file = files[fileIdx % files.length]; fileIdx++;
-      try {
-        const dl = await streamDownload(file);
-        const dlMbps = bytesToMbps(dl.bytes, dl.ms);
-        const sample = { t: Date.now(), downloadMbps: dlMbps };
-        appendLog(`DL ${file} — ${ (dl.bytes/1024|0) } KB in ${Math.round(dl.ms)} ms → ${dlMbps.toFixed(2)} Mbps`);
-        if (workerUrl){
-          try {
-            const up = await uploadOnce(workerUrl, uploadKb);
-            const upMbpsClient = bytesToMbps(up.bytesSent, up.ms);
-            sample.uploadMbps = upMbpsClient;
-            appendLog(`UP ${uploadKb} KB → ${ (up.received||up.bytesSent) } bytes server | ${Math.round(up.ms)} ms | ${upMbpsClient.toFixed(2)} Mbps`);
-          } catch(eu){ appendLog('Upload error: ' + (eu && eu.message ? eu.message : eu)); }
-        }
-        samples.push(sample); if (samples.length > 400) samples.shift();
-        const recent = samples.slice(-rollingWindow);
-        const avg = recent.reduce((a,b) => a + (b.downloadMbps||0), 0) / recent.length;
-        speedDisplay.textContent = avg.toFixed(2) + ' Mbps';
-        drawChart();
-      } catch (e){ appendLog('Download error: ' + (e && e.message ? e.message : e)); await new Promise(r => setTimeout(r, 1500)); }
-      await new Promise(r => setTimeout(r, 120));
-    }
-
-    running = false; startBtn.disabled = false; stopBtn.disabled = true; statusEl.textContent = 'Finished'; appendLog('Test finished.');
+  function stop() {
+    running = false;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
   }
 
-  startBtn.addEventListener('click', () => { if (running) return; runTest(); });
-  stopBtn.addEventListener('click', () => { running = false; stopBtn.disabled = true; statusEl.textContent = 'Stopping...'; });
-  if (autoStartCb.checked) startBtn.click();
+  function startTest(){
+    goBtn.style.transform = 'scale(1.4)';
+    goBtn.style.opacity = '0';
+    setTimeout(()=>goBtn.style.display='none',300);
+    drawGauge(0);
+    runTest();
+  }
 
-})();
+  startBtn.onclick = startTest;
+  goBtn.onclick = startTest;
+
+  stopBtn.onclick = stop;
 </script>
-<script>
-// --- Added Features: Speedometer + Dark Mode + Data Usage + Ping Test ---
 
-// Dark Mode Toggle
-const darkToggle = document.createElement('button');
-darkToggle.textContent = "🌓 Dark Mode";
-darkToggle.style.marginLeft = "12px";
-darkToggle.onclick = () => {
-  document.body.classList.toggle('dark-mode');
-};
-document.body.prepend(darkToggle);
-
-// Inject dark CSS
-const darkStyle = document.createElement('style');
-darkStyle.innerHTML = `
-  .dark-mode {
-    background: #0d1117;
-    color: #e6edf3;
-  }
-  .dark-mode pre { background: #161b22; }
-  .dark-mode #chart { background: #111; }
-  .dark-mode button, .dark-mode input { background: #222; color: #fff; border-color:#444; }
-`;
-document.head.appendChild(darkStyle);
-
-// --- Realistic Circular Speedometer (Ookla style) ---
-const oldSpeedo = document.getElementById('speedometer');
-if(oldSpeedo) oldSpeedo.remove();
-
-const speedoWrap = document.createElement('div');
-speedoWrap.style.width = '320px';
-speedoWrap.style.margin = '20px auto';
-speedoWrap.style.display = 'flex';
-speedoWrap.style.justifyContent = 'center';
-speedoWrap.style.alignItems = 'center';
-
-const speedo = document.createElement('canvas');
-speedo.id = 'speedometer';
-speedo.width = 320;
-speedo.height = 180;
-speedoWrap.appendChild(speedo);
-document.querySelector('h1').after(speedoWrap);
-
-const sctx = speedo.getContext('2d');
-let currentNeedle = 0; // animated needle value
-
-function drawCircularSpeedometer(target){
-  const max = 200; // adjustable upper limit
-  target = Math.min(target, max);
-
-  // Smooth animation
-  currentNeedle += (target - currentNeedle) * 0.08;
-
-  const cx = 160, cy = 160, r = 130;
-  const start = Math.PI, end = 0;
-
-  sctx.clearRect(0,0,speedo.width,speedo.height);
-
-  // Background arc
-  sctx.lineWidth = 20;
-  sctx.strokeStyle = '#2f3542';
-  sctx.beginPath();
-  sctx.arc(cx, cy, r, start, end);
-  sctx.stroke();
-
-  // Active arc gradient
-  const grad = sctx.createLinearGradient(0,0,320,0);
-  grad.addColorStop(0,"#00eaff");
-  grad.addColorStop(1,"#007bff");
-  sctx.strokeStyle = grad;
-  sctx.beginPath();
-  sctx.arc(cx, cy, r, start, start + (currentNeedle/max) * Math.PI);
-  sctx.stroke();
-
-  // Needle
-  const angle = start + (currentNeedle/max) * Math.PI;
-  sctx.strokeStyle = "#00eaff";
-  sctx.lineWidth = 4;
-  sctx.beginPath();
-  sctx.moveTo(cx, cy);
-  sctx.lineTo(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r);
-  sctx.stroke();
-
-  // Speed text
-  sctx.fillStyle = '#00eaff';
-  sctx.font = '26px Arial';
-  sctx.fillText(currentNeedle.toFixed(1) + ' Mbps', cx - 70, cy - 30);
-
-  requestAnimationFrame(()=>drawCircularSpeedometer(target));
-}
-requestAnimationFrame(()=>drawCircularSpeedometer(0));
-
-function updateDataUsage(bytes){
-  totalBytes += bytes;
-  document.getElementById('dataUsed').textContent = (totalBytes/1024/1024).toFixed(2) + ' MB';
-}(bytes){
-  totalBytes += bytes;
-  document.getElementById('dataUsed').textContent = (totalBytes/1024/1024).toFixed(2) + ' MB';
-}
-
-// Ping Test
-async function ping(url){
-  const start = performance.now();
-  try { await fetch(url + '?ping=' + Date.now()); } catch(e){ return null; }
-  return performance.now() - start;
-}
-const pingBox = document.createElement('div');
-pingBox.innerHTML = '<b>Ping:</b> <span id="pingVal">— ms</span>';
-dataBox.after(pingBox);
-
-setInterval(async ()=>{
-  const pv = await ping('https://ipv4.download.thinkbroadband.com/1MB.zip');
-  if(pv) document.getElementById('pingVal').textContent = pv.toFixed(1) + ' ms';
-}, 3000);
-
-// Hook into existing speed updates
-const oldUpdate = speedDisplay.textContent;
-
-// Intercept speed display update in main loop by overwriting setter
-Object.defineProperty(window, 'speedUpdate', {
-  set: function(v){ drawSpeedometer(v); }
-});
-
-</script>
 </body>
 </html>
