@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Continuous Speed Test — Tejas ⚡</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{--muted:#666}
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;max-width:980px;margin:18px auto;padding:18px}
+    h1{margin:0 0 6px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+    input,select,button{padding:8px;border-radius:8px;border:1px solid #ddd;background:#fff}
+    #chart{width:100%;height:220px;border-radius:8px;background:#fafafa;display:block}
+    pre{background:#f7f7f7;padding:10px;border-radius:8px;max-height:260px;overflow:auto}
+    .big{font-size:1.6rem;font-weight:700;margin:10px 0}
+    footer{margin-top:12px;color:var(--muted);font-size:0.9rem}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid #eee;background:#fff}
+    label{display:flex;gap:6px;align-items:center}
+  </style>
+</head>
+<body>
+  <h1>Continuous Speed Test</h1>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div class="pill">Advanced • Simple</div>
+    <div class="pill">5–10 min continuous</div>
+    <div class="pill">Frontend on GitHub Pages</div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <label>Duration (mins): <input id="duration" type="number" min="1" max="60" value="7"></label>
+    <label style="flex:1">Download files (comma-separated URLs): <input id="fileUrls" type="text" style="width:100%" value="https://ipv4.download.thinkbroadband.com/20MB.zip,https://ipv4.download.thinkbroadband.com/100MB.zip,https://speed.hetzner.de/100MB.bin,https://speed.hetzner.de/1GB.bin"></label>
+  </div>
+
+  <div class="row">
+    <label style="flex:1">Upload Worker URL (optional): <input id="workerUrl" type="text" style="width:100%" placeholder="https://your-worker.yourdomain.workers.dev"></label>
+    <label>Upload chunk (KB): <input id="uploadKb" type="number" min="16" max="5120" value="256"></label>
+    <label>Auto-start: <input id="autoStart" type="checkbox"></label>
+  </div>
+
+  <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
+    <button id="startBtn">Start Test</button>
+    <button id="stopBtn" disabled>Stop</button>
+    <div style="margin-left:12px"><small id="status">Idle</small></div>
+  </div>
+
+  <div class="big" id="speedDisplay">— Mbps</div>
+
+  <canvas id="chart"></canvas>
+
+  <h3>Log</h3>
+  <pre id="log"></pre>
+
+  <footer>
+    <small>Download-only works straight on GitHub Pages. Upload needs a tiny server (Cloudflare Worker example available). Defaults use ThinkBroadband + Hetzner test files. Made for you, Tejas ⚡</small>
+  </footer>
+
+<script>
+(() => {
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn  = document.getElementById('stopBtn');
+  const durationInput = document.getElementById('duration');
+  const fileUrlsInput = document.getElementById('fileUrls');
+  const workerUrlInput = document.getElementById('workerUrl');
+  const uploadKbInput  = document.getElementById('uploadKb');
+  const autoStartCb = document.getElementById('autoStart');
+  const speedDisplay = document.getElementById('speedDisplay');
+  const logEl = document.getElementById('log');
+  const statusEl = document.getElementById('status');
+  const chart = document.getElementById('chart');
+  function resizeCanvas(){ chart.width = chart.clientWidth; chart.height = chart.clientHeight; }
+  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+  const ctx = chart.getContext('2d');
+
+  let running = false;
+  let samples = []; // {t, downloadMbps, uploadMbps?}
+  const rollingWindow = 30;
+
+  function appendLog(txt){
+    logEl.textContent = (new Date()).toLocaleTimeString() + ' — ' + txt + '\n' + logEl.textContent;
+  }
+
+  function bytesToMbps(bytes, ms){
+    if (ms <= 0) return 0;
+    const bits = bytes * 8;
+    return (bits / (ms/1000)) / (1024*1024);
+  }
+
+  async function streamDownload(url){
+    const cb = Date.now() + Math.random().toString(36).slice(2);
+    const final = url + (url.includes('?') ? '&' : '?') + 'cb=' + cb;
+    const start = performance.now();
+    const res = await fetch(final, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (res.body && res.body.getReader){
+      const reader = res.body.getReader();
+      let total = 0;
+      while(true){
+        const {done, value} = await reader.read();
+        if (done) break;
+        total += (value ? value.length : 0);
+      }
+      const ms = performance.now() - start;
+      return { bytes: total, ms };
+    } else {
+      const blob = await res.blob();
+      const ms = performance.now() - start;
+      return { bytes: blob.size, ms };
+    }
+  }
+
+  async function uploadOnce(workerUrl, chunkKb){
+    const size = Math.max(1, Math.floor(chunkKb)) * 1024;
+    const arr = new Uint8Array(size);
+    crypto.getRandomValues(arr);
+    const start = performance.now();
+    const res = await fetch(workerUrl, { method: 'POST', body: arr, cache: 'no-store' });
+    const ms = performance.now() - start;
+    let received = null;
+    try { const json = await res.json(); received = json && (json.received||json.receivedBytes||json.size) ? (json.received||json.receivedBytes||json.size) : null; } catch(e){}
+    return { bytesSent: size, ms, received, status: res.status };
+  }
+
+  function drawChart(){
+    const w = chart.width, h = chart.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+    for (let y=0;y<5;y++){ ctx.beginPath(); ctx.moveTo(0, (y+1)*h/6); ctx.lineTo(w, (y+1)*h/6); ctx.stroke(); }
+    if (!samples.length) return;
+    const vals = samples.map(s => s.downloadMbps || 0);
+    const maxV = Math.max(...vals, 1);
+    ctx.beginPath();
+    for (let i=0;i<samples.length;i++){
+      const x = (i/(samples.length-1||1)) * w;
+      const y = h - (samples[i].downloadMbps / maxV) * (h*0.9) - (h*0.05);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = '#0077ff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#0055cc';
+    for (let i=0;i<samples.length;i++){ const x = (i/(samples.length-1||1)) * w; const y = h - (samples[i].downloadMbps / maxV) * (h*0.9) - (h*0.05); ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle = '#333'; ctx.font = '12px system-ui, Arial'; ctx.fillText('Max: ' + maxV.toFixed(2) + ' Mbps', 6, 14);
+  }
+
+  async function runTest(){
+    const durationMin = Math.max(1, Number(durationInput.value) || 7);
+    const durationMs = durationMin * 60 * 1000;
+    let files = String(fileUrlsInput.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+    if (!files.length){ appendLog('No test files provided.'); alert('Please add at least one test file URL.'); return; }
+    const workerUrl = String(workerUrlInput.value || '').trim();
+    const uploadKb = Math.max(16, Number(uploadKbInput.value) || 256);
+
+    running = true; startBtn.disabled = true; stopBtn.disabled = false; statusEl.textContent = 'Running';
+    appendLog('Started test for ' + durationMin + ' minutes. Files: ' + files.join(', ') + (workerUrl ? (' • worker: ' + workerUrl) : ''));
+
+    const endT = Date.now() + durationMs; samples = [];
+    let fileIdx = 0;
+
+    while (running && Date.now() < endT){
+      const file = files[fileIdx % files.length]; fileIdx++;
+      try {
+        const dl = await streamDownload(file);
+        const dlMbps = bytesToMbps(dl.bytes, dl.ms);
+        const sample = { t: Date.now(), downloadMbps: dlMbps };
+        appendLog(`DL ${file} — ${ (dl.bytes/1024|0) } KB in ${Math.round(dl.ms)} ms → ${dlMbps.toFixed(2)} Mbps`);
+        if (workerUrl){
+          try {
+            const up = await uploadOnce(workerUrl, uploadKb);
+            const upMbpsClient = bytesToMbps(up.bytesSent, up.ms);
+            sample.uploadMbps = upMbpsClient;
+            appendLog(`UP ${uploadKb} KB → ${ (up.received||up.bytesSent) } bytes server | ${Math.round(up.ms)} ms | ${upMbpsClient.toFixed(2)} Mbps`);
+          } catch(eu){ appendLog('Upload error: ' + (eu && eu.message ? eu.message : eu)); }
+        }
+        samples.push(sample); if (samples.length > 400) samples.shift();
+        const recent = samples.slice(-rollingWindow);
+        const avg = recent.reduce((a,b) => a + (b.downloadMbps||0), 0) / recent.length;
+        speedDisplay.textContent = avg.toFixed(2) + ' Mbps';
+        drawChart();
+      } catch (e){ appendLog('Download error: ' + (e && e.message ? e.message : e)); await new Promise(r => setTimeout(r, 1500)); }
+      await new Promise(r => setTimeout(r, 120));
+    }
+
+    running = false; startBtn.disabled = false; stopBtn.disabled = true; statusEl.textContent = 'Finished'; appendLog('Test finished.');
+  }
+
+  startBtn.addEventListener('click', () => { if (running) return; runTest(); });
+  stopBtn.addEventListener('click', () => { running = false; stopBtn.disabled = true; statusEl.textContent = 'Stopping...'; });
+  if (autoStartCb.checked) startBtn.click();
+
+})();
+</script>
+</body>
+</html>
