@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SINEWAVE // GITHUB OPS</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>SINEWAVE // GIGABIT OPS</title>
     <style>
         :root {
             --bg-color: #050505;
@@ -31,17 +30,17 @@
 
         .dashboard {
             display: grid;
-            grid-template-columns: 280px 1fr;
-            grid-template-rows: 80px 1fr;
+            grid-template-columns: 1fr;
+            grid-template-rows: 80px 1fr 100px;
             gap: 15px;
             width: 95vw;
             height: 90vh;
-            max-width: 1600px;
+            max-width: 1000px;
+            position: relative;
         }
 
-        /* Header */
+        /* --- CONTROLS --- */
         .controls {
-            grid-column: 1 / -1;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -49,6 +48,8 @@
             border: 1px solid #222;
             padding: 0 30px;
             border-radius: 8px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .brand {
@@ -56,15 +57,10 @@
             font-weight: 900;
             font-size: 1.5rem;
             letter-spacing: -1px;
-            background: linear-gradient(90deg, #fff, #888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #fff;
         }
 
-        .control-group {
-            display: flex;
-            gap: 10px;
-        }
+        .control-group { display: flex; gap: 10px; }
 
         select, button {
             background: #000;
@@ -84,208 +80,267 @@
         .btn-start {
             border: 1px solid var(--accent-cyan);
             color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+            font-weight: bold;
+            text-transform: uppercase;
         }
-        .btn-start:hover { background: var(--accent-cyan); color: #000; }
+        .btn-start:hover { background: var(--accent-cyan); color: #000; box-shadow: 0 0 25px var(--accent-cyan); }
         
         .btn-stop {
             border-color: var(--accent-red);
             color: var(--accent-red);
+            font-weight: bold;
         }
-        .btn-stop:hover { background: var(--accent-red); color: white; }
+        .btn-stop:hover { background: var(--accent-red); color: white; box-shadow: 0 0 25px var(--accent-red); }
 
-        /* Sidebar */
-        .sidebar {
-            background: var(--panel-color);
+        /* --- GAUGE AREA --- */
+        .gauge-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #111 0%, #050505 70%);
             border: 1px solid #222;
             border-radius: 8px;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
+            overflow: hidden;
         }
 
-        .metric {
-            border-left: 3px solid #333;
-            padding-left: 15px;
-            transition: 0.3s;
-        }
-        .metric.active { border-left-color: var(--accent-cyan); }
+        canvas { z-index: 2; }
 
-        .metric-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-            font-family: var(--font-mono);
-        }
-
-        .metric-value {
-            font-size: 2.8rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .metric-unit {
-            font-size: 1rem;
-            color: #666;
-            margin-left: 5px;
-        }
-
-        /* Graph Area */
-        .graph-panel {
+        /* --- STATS FOOTER --- */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             background: var(--panel-color);
             border: 1px solid #222;
             border-radius: 8px;
             padding: 15px;
-            position: relative;
         }
 
-        /* CRT Scanline Effect Overlay */
-        .graph-panel::after {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 2;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-        }
-
-        canvas { width: 100%; height: 100%; }
-
-        .status-bar {
-            grid-column: 1 / -1;
+        .stat-item {
+            text-align: center;
+            border-right: 1px solid #222;
             display: flex;
-            justify-content: space-between;
-            padding: 0 10px;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: #444;
+            flex-direction: column;
+            justify-content: center;
         }
+        .stat-item:last-child { border-right: none; }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .stat-val {
+            font-family: var(--font-mono);
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .stat-unit { font-size: 0.8rem; color: #666; margin-top: -5px;}
     </style>
 </head>
 <body>
 
     <div class="dashboard">
         <div class="controls">
-            <div class="brand">SINEWAVE <span style="color:var(--accent-cyan)">//</span> NET_OPS</div>
-            
+            <div class="brand">SINEWAVE <span style="color:var(--accent-cyan)">//</span> GIGABIT</div>
             <div class="control-group">
                 <select id="serverSelect">
-                    <option value="https://speed.cloudflare.com/__down?bytes=100000000">Cloudflare CDN (Global)</option>
-                    <option value="https://speed.hetzner.de/100MB.bin">Hetzner (Europe)</option>
+                    <option value="https://speed.cloudflare.com/__down?bytes=100000000">Cloudflare (Global)</option>
+                    <option value="https://speed.hetzner.de/100MB.bin">Hetzner (EU)</option>
                     <option value="https://proof.ovh.net/files/100Mb.dat">OVH (Global)</option>
-                    <option value="https://ash-speed.hetzner.com/100MB.bin">Hetzner (US East)</option>
                 </select>
-
                 <select id="durationSelect">
                     <option value="5">5 Minutes</option>
                     <option value="10">10 Minutes</option>
                     <option value="999">Infinite</option>
                 </select>
-
-                <button id="actionBtn" class="btn-start" onclick="toggleTest()">START SEQUENCE</button>
+                <button id="actionBtn" class="btn-start" onclick="toggleTest()">Start Test</button>
             </div>
         </div>
 
-        <div class="sidebar">
-            <div class="metric active">
-                <div class="metric-label">Instant Speed</div>
-                <div class="metric-value" id="speedVal">0.0</div>
-                <span class="metric-unit">Mbps</span>
-            </div>
-
-            <div class="metric">
-                <div class="metric-label">Data Consumed</div>
-                <div class="metric-value" id="dataVal">0.0</div>
-                <span class="metric-unit">GB</span>
-            </div>
-
-            <div class="metric">
-                <div class="metric-label">Peak Speed</div>
-                <div class="metric-value" id="peakVal">0.0</div>
-                <span class="metric-unit">Mbps</span>
-            </div>
-
-            <div class="metric">
-                <div class="metric-label">Session Timer</div>
-                <div class="metric-value" id="timeVal">00:00</div>
-            </div>
+        <div class="gauge-container" id="gaugeWrapper">
+            <canvas id="gaugeCanvas"></canvas>
         </div>
 
-        <div class="graph-panel">
-            <canvas id="speedChart"></canvas>
-        </div>
-
-        <div class="status-bar">
-            <span id="statusText">SYSTEM READY</span>
-            <span>GITHUB PAGES DEPLOYMENT // HTTPS SECURE</span>
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">Data Consumed</div>
+                <div class="stat-val" id="dataVal">0.00</div>
+                <span class="stat-unit">GB</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Peak Speed</div>
+                <div class="stat-val" id="peakVal">0.0</div>
+                <span class="stat-unit">Mbps</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Run Time</div>
+                <div class="stat-val" id="timeElapsed">00:00</div>
+                <span class="stat-unit">MM:SS</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Remaining</div>
+                <div class="stat-val" id="timeRem">--:--</div>
+                <span class="stat-unit">MM:SS</span>
+            </div>
         </div>
     </div>
 
     <script>
         // --- LOGIC ENGINE ---
-        
         let isRunning = false;
-        let testStartTime = 0;
-        let testEndTime = 0;
-        let totalBytesLoaded = 0;
+        let workers = [];
+        const CONCURRENT_STREAMS = 6;
         
-        // Instant speed calculation variables
+        let totalBytesLoaded = 0;
         let lastByteCount = 0;
         let lastCheckTime = 0;
-        let peakSpeed = 0;
-        
-        let workers = [];
+        let testStartTime = 0;
+        let testEndTime = 0;
         let uiInterval;
-        const CONCURRENT_STREAMS = 6; // Standard for saturating consumer fiber
 
-        // --- CHART SETUP ---
-        const ctx = document.getElementById('speedChart').getContext('2d');
-        
-        // Advanced gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, 600);
-        gradient.addColorStop(0, 'rgba(0, 243, 255, 0.4)');
-        gradient.addColorStop(1, 'rgba(0, 243, 255, 0)');
+        let currentVisualSpeed = 0; 
+        let targetSpeed = 0;        
+        let peakSpeed = 0;
+        let rotationOffset = 0;     
 
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: Array(60).fill(''), // Initial placeholder for 60 seconds view
-                datasets: [{
-                    label: 'Downlink',
-                    data: Array(60).fill(0),
-                    borderColor: '#00f3ff',
-                    backgroundColor: gradient,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                scales: {
-                    x: { display: false },
-                    y: { 
-                        display: true,
-                        position: 'right',
-                        grid: { color: '#222' },
-                        ticks: { color: '#555', font: { family: 'Courier New' } }
-                    }
-                },
-                plugins: { legend: { display: false } }
+        // --- CANVAS ENGINE ---
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY, radius;
+
+        function resizeCanvas() {
+            const wrapper = document.getElementById('gaugeWrapper');
+            width = wrapper.clientWidth;
+            height = wrapper.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+            centerX = width / 2;
+            centerY = height / 2;
+            // Responsive Radius
+            radius = (Math.min(width, height) / 2) - 50; 
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Smooth Interpolation (Easing)
+            const diff = targetSpeed - currentVisualSpeed;
+            if (Math.abs(diff) > 0.1) {
+                currentVisualSpeed += diff * 0.08; // Slightly faster reaction
+            } else {
+                currentVisualSpeed = targetSpeed;
             }
-        });
 
+            drawGauge(currentVisualSpeed);
+            rotationOffset += 0.002; // Slow background spin
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+
+        function drawGauge(speedMbps) {
+            // Logarithmic Scale: Cap at 1000 Mbps
+            // We use Log10 so that 10, 100, 1000 are evenly spaced steps
+            const maxVal = 1000;
+            // +1 to handle 0 speed cleanly (log(1)=0)
+            const logSpeed = Math.log10(speedMbps + 1); 
+            const logMax = Math.log10(maxVal + 1);
+            
+            let progress = logSpeed / logMax;
+            if (progress > 1) progress = 1;
+            if (progress < 0) progress = 0;
+
+            const startAngle = Math.PI * 0.8; 
+            const endAngle = Math.PI * 2.2;   
+            const totalAngle = endAngle - startAngle;
+            const currentAngle = startAngle + (totalAngle * progress);
+
+            // 1. Idle Ring (Decoration)
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rotationOffset);
+            ctx.beginPath();
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 15]);
+            ctx.arc(0, 0, radius + 30, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // 2. Track Background
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.strokeStyle = '#151515';
+            ctx.lineWidth = 25;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // 3. Active Bar (Gradient)
+            if (speedMbps > 0.5) {
+                const grad = ctx.createLinearGradient(0, height, width, 0);
+                grad.addColorStop(0, '#00f3ff');  // Cyan (Low)
+                grad.addColorStop(0.6, '#bc13fe'); // Purple (Mid)
+                grad.addColorStop(1, '#ff0055');   // Red (High/Gigabit)
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, currentAngle);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 25;
+                ctx.lineCap = 'round';
+                // Glow effect
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = 'rgba(0, 243, 255, 0.3)';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // 4. Center Data
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 90px "Courier New"';
+            ctx.fillText(speedMbps.toFixed(0), centerX, centerY);
+
+            ctx.fillStyle = '#00f3ff';
+            ctx.font = '14px sans-serif';
+            ctx.letterSpacing = '3px';
+            ctx.fillText('DOWNLOAD MBPS', centerX, centerY + 60);
+
+            // 5. Ticks (Logarithmic placement)
+            // Helper to find angle for specific value
+            const getTickAngle = (val) => {
+                const p = Math.log10(val + 1) / Math.log10(1001);
+                return startAngle + (totalAngle * p);
+            }
+
+            drawTick(0, '0', startAngle);
+            drawTick(10, '10', getTickAngle(10));
+            drawTick(50, '50', getTickAngle(50));
+            drawTick(100, '100', getTickAngle(100));
+            drawTick(500, '500', getTickAngle(500));
+            drawTick(1000, '1G', endAngle);
+        }
+
+        function drawTick(val, label, angle) {
+            const innerR = radius - 40;
+            const x = centerX + Math.cos(angle) * innerR;
+            const y = centerY + Math.sin(angle) * innerR;
+            
+            ctx.fillStyle = '#555';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(label, x, y);
+        }
+
+        // --- TEST CONTROLLER ---
         function toggleTest() {
             if (isRunning) stopTest();
             else startTest();
@@ -296,122 +351,89 @@
             totalBytesLoaded = 0;
             lastByteCount = 0;
             peakSpeed = 0;
-            
-            // UI Set
+            targetSpeed = 0;
+            currentVisualSpeed = 0;
+
             const btn = document.getElementById('actionBtn');
-            btn.innerText = "ABORT SEQUENCE";
+            btn.innerText = "ABORT";
             btn.className = "btn-stop";
-            document.getElementById('statusText').innerText = "STRESS TEST ACTIVE // DOWNLOADING...";
-            
-            // Time Set
+
             const durationMins = parseFloat(document.getElementById('durationSelect').value);
             testStartTime = Date.now();
             lastCheckTime = testStartTime;
             testEndTime = testStartTime + (durationMins * 60 * 1000);
 
-            // URL Set
             const targetUrl = document.getElementById('serverSelect').value;
+            workers = [];
+            for(let i=0; i<CONCURRENT_STREAMS; i++) spawnWorker(targetUrl);
 
-            // Ignite Workers
-            workers = []; // Clear previous
-            for(let i=0; i<CONCURRENT_STREAMS; i++) {
-                spawnWorker(targetUrl);
-            }
-
-            uiInterval = setInterval(updateLoop, 1000);
+            // Update UI loop
+            uiInterval = setInterval(updateData, 200); // 5Hz update rate
         }
 
         function stopTest() {
             isRunning = false;
             clearInterval(uiInterval);
-            
-            // Kill workers
             workers.forEach(w => w.abort());
             
-            const btn = document.getElementById('actionBtn');
-            btn.innerText = "START SEQUENCE";
-            btn.className = "btn-start";
-            document.getElementById('statusText').innerText = "TEST COMPLETE";
+            document.getElementById('actionBtn').innerText = "START TEST";
+            document.getElementById('actionBtn').className = "btn-start";
+            targetSpeed = 0;
         }
 
         async function spawnWorker(url) {
             if(!isRunning) return;
-            
             const controller = new AbortController();
             workers.push(controller);
-
             try {
-                // Fetch with cache busting
                 const response = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Math.random(), {
-                    signal: controller.signal,
-                    cache: "no-store",
-                    mode: "cors"
+                    signal: controller.signal, cache: "no-store", mode: "cors"
                 });
-
                 const reader = response.body.getReader();
-                
                 while(true) {
                     const {done, value} = await reader.read();
                     if(done || !isRunning) break;
                     if(value) totalBytesLoaded += value.length;
                 }
-                
-                // Restart stream if test is still running
                 if(isRunning) spawnWorker(url);
-
-            } catch(e) {
-                // If network glitches, retry after short delay
-                if(isRunning) setTimeout(() => spawnWorker(url), 1000);
-            }
+            } catch(e) { if(isRunning) setTimeout(() => spawnWorker(url), 1000); }
         }
 
-        function updateLoop() {
+        function updateData() {
             const now = Date.now();
-            
-            // 1. Time Check
-            const timeLeft = testEndTime - now;
-            if(timeLeft <= 0) {
-                stopTest();
-                return;
-            }
+            if(now > testEndTime) { stopTest(); return; }
 
-            // 2. Calculate Instant Speed (Bytes since last check)
-            const timeDiff = (now - lastCheckTime) / 1000; // in seconds
-            const bytesDiff = totalBytesLoaded - lastByteCount;
-            
-            // Avoid division by zero
+            const timeDiff = (now - lastCheckTime) / 1000; 
             if(timeDiff <= 0) return;
 
+            const bytesDiff = totalBytesLoaded - lastByteCount;
             const bits = bytesDiff * 8;
             const mbps = (bits / timeDiff) / (1024 * 1024);
-            
-            // Update tracking vars
+
+            // Smoothing filter (prevents jitter)
+            // If new speed is drastically different, blend it; otherwise take it
+            targetSpeed = mbps; 
+            if(mbps > peakSpeed) peakSpeed = mbps;
+
             lastByteCount = totalBytesLoaded;
             lastCheckTime = now;
 
-            // 3. Update Peak
-            if(mbps > peakSpeed) peakSpeed = mbps;
-
-            // 4. Update UI DOM
-            document.getElementById('speedVal').innerText = mbps.toFixed(1);
-            document.getElementById('peakVal').innerText = peakSpeed.toFixed(1);
-            
+            // DOM Updates
             const gb = totalBytesLoaded / (1024 * 1024 * 1024);
             document.getElementById('dataVal').innerText = gb.toFixed(2);
+            document.getElementById('peakVal').innerText = peakSpeed.toFixed(0);
             
-            const mins = Math.floor((timeLeft/1000)/60);
-            const secs = Math.floor((timeLeft/1000)%60);
-            document.getElementById('timeVal').innerText = `${mins}:${secs.toString().padStart(2,'0')}`;
-
-            // 5. Update Chart
-            updateChart(mbps);
+            const elapsed = Math.floor((now - testStartTime)/1000);
+            const remain = Math.floor((testEndTime - now)/1000);
+            document.getElementById('timeElapsed').innerText = fmtTime(elapsed);
+            document.getElementById('timeRem').innerText = fmtTime(remain);
         }
 
-        function updateChart(val) {
-            const data = chart.data.datasets[0].data;
-            data.shift();
-            data.push(val);
-            chart.update('none'); // 'none' mode for performance
+        function fmtTime(s) {
+            if (s < 0) s = 0;
+            const m = Math.floor(s/60);
+            const sec = s%60;
+            return `${m}:${sec.toString().padStart(2,'0')}`;
         }
     </script>
 </body>
