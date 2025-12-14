@@ -3,255 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpeedTest // Pro</title>
-    
+    <title>SpeedTest // Fluid</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Palette: Slate & Indigo */
-            --bg-body: #0f172a;       /* Slate 900 */
-            --bg-panel: #1e293b;      /* Slate 800 */
-            --border-color: #334155;  /* Slate 700 */
-            --text-primary: #f8fafc;  /* Slate 50 */
-            --text-secondary: #94a3b8;/* Slate 400 */
-            
-            --accent-primary: #3b82f6; /* Blue 500 */
-            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); /* Blue to Violet */
-            
-            --font-ui: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --bg-core: #050505;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent-gradient: linear-gradient(90deg, #00f2ff 0%, #bd00ff 50%, #ff0055 100%);
+            --font-main: 'Inter', sans-serif;
         }
 
         body {
-            background-color: var(--bg-body);
-            color: var(--text-primary);
-            font-family: var(--font-ui);
+            background-color: var(--bg-core);
+            color: var(--text-main);
+            font-family: var(--font-main);
             margin: 0;
             padding: 0;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+            /* Subtle spotlight effect behind the gauge */
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 70%);
         }
 
-        .dashboard {
-            width: 90vw;
-            max-width: 1000px;
-            display: grid;
-            grid-template-rows: auto auto 1fr auto;
-            gap: 24px;
-        }
-
-        /* --- 1. HEADER & CONTROLS --- */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        .brand {
-            font-weight: 700;
-            font-size: 1.25rem;
-            letter-spacing: -0.025em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .brand-dot {
-            width: 8px; height: 8px;
-            background: var(--accent-gradient);
-            border-radius: 50%;
-        }
-
-        .controls {
-            display: flex;
-            gap: 12px;
-        }
-
-        select {
-            background: var(--bg-body);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-family: var(--font-ui);
-            font-size: 0.875rem;
-            outline: none;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        select:hover { border-color: var(--accent-primary); }
-
-        .btn {
-            border: none;
-            border-radius: 6px;
-            padding: 8px 20px;
-            font-family: var(--font-ui);
-            font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-        }
-        
-        .btn-primary {
-            background: var(--accent-gradient);
-            color: white;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-        }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-primary:active { transform: scale(0.98); }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1); /* Red 500 with opacity */
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-
-        /* --- 2. STATS CARDS --- */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
-
-        .card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+        .app-container {
+            width: 100%;
+            max-width: 900px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
+            gap: 40px;
+            position: relative;
+            z-index: 2;
         }
-        
-        .card:hover { border-color: #475569; }
+
+        /* --- 1. MINIMAL HEADER --- */
+        .header {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 50px; /* Pill shape */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        select, button {
+            background: transparent;
+            color: #fff;
+            border: none;
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 20px;
+            transition: 0.2s;
+            outline: none;
+        }
+
+        select { color: var(--text-muted); }
+        select:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+        button.action-btn {
+            background: #fff;
+            color: #000;
+            font-weight: 700;
+            padding: 8px 24px;
+        }
+        button.action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255,255,255,0.3);
+        }
+        button.stop-btn {
+            background: #ff0055;
+            color: #fff;
+        }
+
+        /* --- 2. THE GAUGE (HERO) --- */
+        .gauge-wrapper {
+            position: relative;
+            width: 500px;
+            height: 400px; /* Reduced height to crop bottom slightly */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align top */
+        }
+        canvas { z-index: 5; }
+
+        /* --- 3. FLOATING STATS (No Borders) --- */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 50px;
+        }
+
+        .stat-item {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
         .stat-label {
             font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
+            letter-spacing: 1px;
+            color: var(--text-muted);
         }
 
-        .stat-value {
-            font-family: var(--font-mono);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 300; /* Thin modern look */
+            color: #fff;
         }
 
         .stat-unit {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
+            font-size: 0.8rem;
+            color: #555;
         }
-
-        /* --- 3. GAUGE CONTAINER --- */
-        .gauge-container {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 400px;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.2);
-        }
-
-        canvas { z-index: 2; }
 
         /* --- 4. FOOTER --- */
-        .footer {
+        .footer-info {
+            position: absolute;
+            bottom: 30px;
+            color: #444;
+            font-size: 0.8rem;
             display: flex;
-            justify-content: space-between;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            padding: 0 8px;
-        }
-
-        .status-dot {
-            display: inline-block;
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: #22c55e; /* Green */
-            margin-right: 6px;
-            transform: translateY(-2px);
+            gap: 20px;
         }
 
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <header class="header">
-            <div class="brand">
-                <div class="brand-dot"></div>
-                Network Stress
-            </div>
-            
-            <div class="controls">
-                <select id="serverSelect">
-                    <option value="https://speed.cloudflare.com/__down?bytes=100000000">Cloudflare CDN</option>
-                    <option value="https://speed.hetzner.de/100MB.bin">Hetzner (EU)</option>
-                    <option value="https://proof.ovh.net/files/100Mb.dat">OVH (Global)</option>
-                </select>
-                <select id="durationSelect">
-                    <option value="5">5 Minutes</option>
-                    <option value="10">10 Minutes</option>
-                    <option value="999">No Limit</option>
-                </select>
-                <button id="actionBtn" class="btn btn-primary" onclick="toggleTest()">Start Test</button>
-            </div>
-        </header>
-
-        <div class="stats-grid">
-            <div class="card">
+    <div class="app-container">
+        
+        <div class="stats-row">
+            <div class="stat-item">
                 <span class="stat-label">Latency</span>
-                <span class="stat-value" id="pingVal">--</span>
-                <span class="stat-unit">milliseconds</span>
+                <span class="stat-number" id="pingVal">--</span>
+                <span class="stat-unit">ms</span>
             </div>
-            <div class="card">
-                <span class="stat-label">Peak Speed</span>
-                <span class="stat-value" id="peakVal">0</span>
-                <span class="stat-unit">Mbps</span>
-            </div>
-            <div class="card">
+            <div class="stat-item">
                 <span class="stat-label">Avg Speed</span>
-                <span class="stat-value" id="avgVal">0</span>
+                <span class="stat-number" id="avgVal">0</span>
                 <span class="stat-unit">Mbps</span>
             </div>
-            <div class="card">
-                <span class="stat-label">Data Usage</span>
-                <span class="stat-value" id="dataVal">0.00</span>
-                <span class="stat-unit">Gigabytes</span>
+            <div class="stat-item">
+                <span class="stat-label">Data Used</span>
+                <span class="stat-number" id="dataVal">0.00</span>
+                <span class="stat-unit">GB</span>
             </div>
         </div>
 
-        <div class="gauge-container" id="gaugeWrapper">
+        <div class="gauge-wrapper" id="gaugeBox">
             <canvas id="gaugeCanvas"></canvas>
         </div>
 
-        <div class="footer">
-            <div><span class="status-dot" id="statusDot" style="background:#64748b"></span> <span id="statusText">Ready to start</span></div>
-            <div>
-                Time Elapsed: <span id="timeElapsed" style="font-family:var(--font-mono); color:var(--text-primary)">00:00</span>
-            </div>
+        <div class="header">
+            <select id="serverSelect">
+                <option value="https://speed.cloudflare.com/__down?bytes=100000000">Cloudflare (Global)</option>
+                <option value="https://speed.hetzner.de/100MB.bin">Hetzner (EU)</option>
+                <option value="https://proof.ovh.net/files/100Mb.dat">OVH (Global)</option>
+            </select>
+            <select id="durationSelect">
+                <option value="5">5 Min Test</option>
+                <option value="10">10 Min Test</option>
+                <option value="999">Infinite</option>
+            </select>
+            <button id="actionBtn" class="action-btn" onclick="toggleTest()">Start</button>
         </div>
+
+        <div class="footer-info">
+            <span id="statusText">System Ready</span>
+            <span>|</span>
+            <span id="timeText">00:00</span>
+        </div>
+
     </div>
 
     <script>
@@ -271,109 +207,108 @@
         let currentVisualSpeed = 0;
         let peakSpeed = 0;
 
-        // --- CANVAS ---
+        // --- VISUAL ENGINE ---
         const canvas = document.getElementById('gaugeCanvas');
         const ctx = canvas.getContext('2d');
         let W, H, CX, CY, R;
 
         function resize() {
-            const wrapper = document.getElementById('gaugeWrapper');
-            W = wrapper.clientWidth;
-            H = wrapper.clientHeight;
+            const box = document.getElementById('gaugeBox');
+            W = box.clientWidth;
+            H = box.clientHeight;
             canvas.width = W;
             canvas.height = H;
             CX = W / 2;
             CY = H / 2;
-            R = (Math.min(W, H) / 2) - 60; // More padding
+            R = (Math.min(W, H) / 2) - 20; 
         }
         window.addEventListener('resize', resize);
         setTimeout(resize, 100);
 
-        // --- ANIMATION ---
         function animate() {
             ctx.clearRect(0, 0, W, H);
-            
+
             // Easing
             let diff = targetSpeed - currentVisualSpeed;
             if(Math.abs(diff) > 0.5) currentVisualSpeed += diff * 0.08;
             else currentVisualSpeed = targetSpeed;
 
-            drawModernGauge(currentVisualSpeed);
+            drawFluidGauge(currentVisualSpeed);
             requestAnimationFrame(animate);
         }
         requestAnimationFrame(animate);
 
-        function drawModernGauge(speed) {
-            // Scale: 0 to 1000 Mbps
-            // We'll use a 3/4 circle (135deg to 405deg)
-            const startAngle = Math.PI * 0.75;
-            const endAngle = Math.PI * 2.25;
+        function drawFluidGauge(speed) {
+            // Arc logic: Open circle (220 degrees)
+            const startAngle = Math.PI * 0.8; 
+            const endAngle = Math.PI * 2.2; 
             const totalAngle = endAngle - startAngle;
 
-            // Logarithmic progress for better visual at low speeds
+            // Log Scale 0-1000
             const maxLog = Math.log10(1001);
             let p = Math.log10(speed + 1) / maxLog;
-            if (p > 1) p = 1; if (p < 0) p = 0;
-            
+            if(p > 1) p = 1; if(p < 0) p = 0;
             const currentAngle = startAngle + (totalAngle * p);
 
-            // 1. Background Track
+            // 1. Background Track (Dark Grey, Round Caps)
             ctx.beginPath();
             ctx.arc(CX, CY, R, startAngle, endAngle);
-            ctx.strokeStyle = "#334155"; // Slate 700
-            ctx.lineWidth = 12;
+            ctx.strokeStyle = "#1a1a1a";
+            ctx.lineWidth = 25; // Thick
             ctx.lineCap = "round";
             ctx.stroke();
 
-            // 2. Filled Arc (Gradient)
-            if (p > 0.01) {
+            // 2. Active Gradient Arc
+            if(p > 0.001) {
                 const grad = ctx.createLinearGradient(0, H, W, 0);
-                grad.addColorStop(0, '#3b82f6'); // Blue
-                grad.addColorStop(1, '#8b5cf6'); // Violet
+                grad.addColorStop(0, '#00f2ff'); // Cyan
+                grad.addColorStop(0.5, '#bd00ff'); // Purple
+                grad.addColorStop(1, '#ff0055'); // Pink
 
                 ctx.beginPath();
                 ctx.arc(CX, CY, R, startAngle, currentAngle);
                 ctx.strokeStyle = grad;
-                ctx.lineWidth = 12;
+                ctx.lineWidth = 25; // Same thickness
                 ctx.lineCap = "round";
-                // Soft shadow/glow
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = "rgba(59, 130, 246, 0.4)";
+                
+                // Juicy Glow
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = "rgba(189, 0, 255, 0.4)";
+                
                 ctx.stroke();
-                ctx.shadowBlur = 0;
+                ctx.shadowBlur = 0; // Reset
             }
 
-            // 3. Text
+            // 3. Center Text
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            
-            // Speed Number
-            ctx.font = "700 80px 'Inter'";
-            ctx.fillStyle = "#f8fafc";
+
+            // Big Number
+            ctx.font = "800 100px 'Inter'"; // Heavy weight
+            ctx.fillStyle = "#fff";
             ctx.fillText(speed.toFixed(0), CX, CY);
 
-            // Label
-            ctx.font = "500 16px 'Inter'";
-            ctx.fillStyle = "#94a3b8";
-            ctx.fillText("Mbps Download", CX, CY + 50);
+            // Unit Label
+            ctx.font = "600 14px 'Inter'";
+            ctx.fillStyle = "#888";
+            ctx.letterSpacing = "2px";
+            ctx.fillText("DOWNLOAD MBPS", CX, CY + 60);
 
-            // 4. Clean Ticks (Just a few)
-            drawTick("0", startAngle);
-            drawTick("100", startAngle + totalAngle * (Math.log10(101)/maxLog));
-            drawTick("500", startAngle + totalAngle * (Math.log10(501)/maxLog));
-            drawTick("1G", endAngle);
+            // 4. Subtle Ticks (Just 0 and 1G for minimalism)
+            drawMiniLabel("0", startAngle);
+            drawMiniLabel("1G", endAngle);
         }
 
-        function drawTick(text, angle) {
-            const dist = R + 35;
-            const x = CX + Math.cos(angle) * dist;
-            const y = CY + Math.sin(angle) * dist;
+        function drawMiniLabel(text, angle) {
+            const x = CX + Math.cos(angle) * (R + 35);
+            const y = CY + Math.sin(angle) * (R + 35);
             ctx.font = "12px 'Inter'";
-            ctx.fillStyle = "#64748b";
+            ctx.fillStyle = "#444";
             ctx.fillText(text, x, y);
         }
 
-        // --- CONTROLLER ---
+
+        // --- LOGIC CONTROLLER ---
         function toggleTest() {
             if(isRunning) stopTest();
             else startTest();
@@ -386,17 +321,13 @@
             peakSpeed = 0;
             targetSpeed = 0;
 
-            // UI
+            // UI Changes
             const btn = document.getElementById('actionBtn');
-            btn.innerText = "Stop Test";
-            btn.className = "btn btn-danger";
-            
-            document.getElementById('statusText').innerText = "Testing connection...";
-            document.getElementById('statusDot').style.background = "#3b82f6"; // Blue
-            
-            // Reset Stats
+            btn.innerText = "Stop";
+            btn.classList.add('stop-btn');
+            document.getElementById('statusText').innerText = "Testing Connection...";
             document.getElementById('pingVal').innerText = "--";
-            
+
             // Timer
             const mins = parseFloat(document.getElementById('durationSelect').value);
             startTime = Date.now();
@@ -407,45 +338,42 @@
             const url = document.getElementById('serverSelect').value;
             workers = [];
             
-            // Spawn first worker with ping check
-            spawnWorker(url, true); 
-            // Spawn rest
+            // Latency Check Worker
+            spawnWorker(url, true);
+            // Volume Workers
             for(let i=1; i<CONCURRENT_STREAMS; i++) {
-                setTimeout(() => spawnWorker(url, false), 100 * i);
+                setTimeout(() => spawnWorker(url, false), 150 * i);
             }
 
-            timerInterval = setInterval(updateLoop, 250);
+            timerInterval = setInterval(updateLoop, 200);
         }
 
         function stopTest() {
             isRunning = false;
             clearInterval(timerInterval);
             workers.forEach(w => w.abort());
-            
+
             const btn = document.getElementById('actionBtn');
-            btn.innerText = "Start Test";
-            btn.className = "btn btn-primary";
-            
-            document.getElementById('statusText').innerText = "Test completed";
-            document.getElementById('statusDot').style.background = "#22c55e"; // Green
-            
+            btn.innerText = "Start";
+            btn.classList.remove('stop-btn');
+            document.getElementById('statusText').innerText = "Test Complete";
             targetSpeed = 0;
         }
 
-        async function spawnWorker(url, measureLatency) {
+        async function spawnWorker(url, checkPing) {
             if(!isRunning) return;
             const controller = new AbortController();
             workers.push(controller);
-
             const t0 = performance.now();
+
             try {
                 const response = await fetch(url + "&t=" + Math.random(), {
                     signal: controller.signal, cache: "no-store", mode: "cors"
                 });
 
-                if (measureLatency) {
-                    const latency = (performance.now() - t0).toFixed(0);
-                    document.getElementById('pingVal').innerText = latency;
+                if(checkPing) {
+                    const lat = (performance.now() - t0).toFixed(0);
+                    document.getElementById('pingVal').innerText = lat;
                 }
 
                 const reader = response.body.getReader();
@@ -456,7 +384,7 @@
                 }
                 if(isRunning) spawnWorker(url, false);
             } catch(e) { 
-                if(isRunning) setTimeout(() => spawnWorker(url, measureLatency), 1000); 
+                if(isRunning) setTimeout(() => spawnWorker(url, checkPing), 1000); 
             }
         }
 
@@ -464,10 +392,9 @@
             const now = Date.now();
             if(now > endTime) { stopTest(); return; }
 
-            // Speed Calc
+            // Speed
             const dt = (now - lastTime) / 1000;
             if(dt <= 0) return;
-            
             const dBytes = totalBytes - lastBytes;
             const speed = (dBytes * 8) / dt / (1024*1024);
             
@@ -477,16 +404,14 @@
             lastBytes = totalBytes;
             lastTime = now;
 
-            // Stats Calc
+            // Avg & Data
             const elapsed = (now - startTime) / 1000;
             const avg = (totalBytes * 8) / elapsed / (1024*1024);
             const gb = totalBytes / (1024**3);
 
-            // Update DOM
-            document.getElementById('peakVal').innerText = peakSpeed.toFixed(0);
             document.getElementById('avgVal').innerText = avg.toFixed(0);
             document.getElementById('dataVal').innerText = gb.toFixed(2);
-            document.getElementById('timeElapsed').innerText = fmtTime(elapsed);
+            document.getElementById('timeText').innerText = fmtTime(elapsed);
         }
 
         function fmtTime(s) {
